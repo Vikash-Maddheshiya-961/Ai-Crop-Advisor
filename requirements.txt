@@ -1,4 +1,5 @@
 torch
+torchvision
 Flask
 gunicorn
 numpy
@@ -6,3 +7,4 @@ pandas
 scikit-learn
 requests
 Pillow
+joblib
