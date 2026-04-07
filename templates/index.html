@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI Crop Advisor</title>
+
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 0;
+            height:100%;
+            overflow-x: hidden;
+            overflow-y: hidden;
+        }
+
+        /* MAIN BACKGROUND AREA */
+        #main-content {
+            position: relative;
+            min-height: calc(100vh - 60px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* OVERLAY */
+        #main-content::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 0;
+        }
+
+        /* BACKGROUNDS */
+        .bg-disease { background: url('/static/plant2.jpeg') no-repeat center/cover; }
+        .bg-crop { background: url('/static/crop.jpeg') no-repeat center/cover; }
+        .bg-weather { background: url('/static/weather.jpeg') no-repeat center/cover; }
+
+        /* NAVBAR */
+        .navbar {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            padding: 15px;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .navbar button {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            padding: 10px 18px;
+            border-radius: 10px;
+            color: white;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .navbar button:hover {
+            background: #4CAF50;
+        }
+
+        /* CARD */
+        .container {
+            position: relative;
+            z-index: 1;
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 30px;
+            width: 420px;
+            text-align: center;
+            color: white;
+        }
+
+        /* SECTIONS */
+        .section {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .active { display: block; }
+
+        @keyframes fadeIn {
+            from {opacity:0;}
+            to {opacity:1;}
+        }
+
+        /* INPUTS */
+        input, select {
+            width: 90%;
+            padding: 10px;
+            border-radius: 8px;
+            border: none;
+            margin: 5px 0;
+        }
+
+        /* BUTTON */
+        .main-btn {
+            background: #43a047;
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: none;
+            color: white;
+            cursor: pointer;
+        }
+
+        img {
+            margin-top: 10px;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="navbar">
+    <button onclick="showSection('disease')">🌿 Disease</button>
+    <button onclick="showSection('crop')">🌾 Crop</button>
+    <button onclick="showSection('weather')">🌦 Weather</button>
+</div>
+
+<div id="main-content">
+<div class="container">
+
+<!-- 🌿 DISEASE -->
+<div id="disease" class="section active">
+    <h2>Disease Detection</h2>
+
+    <form method="POST" enctype="multipart/form-data">
+        <input type="hidden" name="form_type" value="disease">
+
+        <input type="file" name="file" required><br><br>
+        <button type="submit" class="main-btn">Predict</button>
+    </form>
+
+    {% if result %}
+        <p>{{ result }}</p>
+        <p>{{ (confidence * 100) | round(2) }}%</p>
+        <img src="{{ image }}" width="250">
+    {% endif %}
+</div>
+
+<!-- 🌾 CROP -->
+<div id="crop" class="section">
+    <h2>Crop Recommendation</h2>
+
+    <form method="POST">
+        <input type="hidden" name="form_type" value="crop">
+
+        <input name="nitrogen" type="number" placeholder="Nitrogen">
+        <input name="phosphorus" type="number" placeholder="Phosphorus">
+        <input name="potassium" type="number" placeholder="Potassium">
+        <input name="temperature" type="number" placeholder="Temperature">
+        <input name="humidity" type="number" placeholder="Humidity">
+        <input name="ph" type="number" step="0.1" placeholder="pH">
+        <input name="rainfall" type="number" placeholder="Rainfall"><br><br>
+
+        <button type="submit" class="main-btn">Predict</button>
+    </form>
+
+    {% if crop_result %}
+        <h3>{{ crop_result }}</h3>
+    {% endif %}
+</div>
+
+<!-- 🌦 WEATHER -->
+<div id="weather" class="section">
+    <h2>Weather</h2>
+
+    <form method="POST">
+        <input type="hidden" name="form_type" value="weather">
+
+        <select name="city">
+            <option value="">Select City</option>
+            <option value="Gorakhpur">Gorakhpur</option>
+            <option value="Lucknow">Lucknow</option>
+            <option value="Delhi">Delhi</option>
+            <option value="Mumbai">Mumbai</option>
+            <option value="Bangalore">Bangalore</option>
+            <option value="Chennai">Chennai</option>
+        </select>
+
+        <input name="city_input" placeholder="Enter city"><br><br>
+
+        <button type="button" onclick="getLocation()">📍 Auto Detect</button><br><br>
+        <button type="submit" class="main-btn">Get Weather</button>
+    </form>
+
+    {% if temp %}
+        <p>City: {{ city }}</p>
+        <p>Temperature: {{ temp }}°C | Humidity: {{ humidity }}%</p>
+        <p>{{ description }}</p>
+    {% endif %}
+</div>
+
+</div>
+</div>
+
+<script>
+function showSection(sectionId) {
+    let sections = document.getElementsByClassName("section");
+
+    for (let i = 0; i < sections.length; i++) {
+        sections[i].classList.remove("active");
+    }
+
+    document.getElementById(sectionId).classList.add("active");
+
+    let main = document.getElementById("main-content");
+
+    main.classList.remove("bg-disease", "bg-crop", "bg-weather");
+    main.classList.add("bg-" + sectionId);
+
+    localStorage.setItem("activeSection", sectionId);
+}
+
+window.onload = function () {
+    let saved = localStorage.getItem("activeSection") || "disease";
+    showSection(saved);
+};
+
+function getLocation() {
+    navigator.geolocation.getCurrentPosition(pos => {
+        fetch(`/get_location?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}`)
+        .then(res => res.json())
+        .then(data => {
+            document.querySelector('[name="city_input"]').value = data.city;
+        });
+    });
+}
+</script>
+
+</body>
+</html>
