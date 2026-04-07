@@ -25,7 +25,8 @@ disease_info = {
 }
 
 def get_weather(city="Lucknow"):
-        api_key = "0a1a56ecae9a67427481eeb46a153ccf"
+        import os
+        api_key = os.getenv("API_KEY")
     
         url = f"https://api.openweathermap.org/data/2.5/weather?q={city}&appid={api_key}&units=metric"
     
@@ -114,7 +115,8 @@ def get_location():
     lat = request.args.get("lat")
     lon = request.args.get("lon")
 
-    api_key = "0a1a56ecae9a67427481eeb46a153ccf"
+    import os
+    api_key = os.getenv("API_KEY")
 
     url = f"http://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={api_key}&units=metric"
     data = requests.get(url).json()
